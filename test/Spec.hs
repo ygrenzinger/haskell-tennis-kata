@@ -2,8 +2,8 @@ import Lib
 
 import Test.Hspec (Spec, hspec, describe, it, shouldBe)
 
-p1 = Player1
-p2 = Player2
+p1 = Player1 "Nadal"
+p2 = Player2 "Federer"
 
 main :: IO ()
 main = hspec $ do
@@ -13,25 +13,31 @@ main = hspec $ do
       head game `shouldBe` p1
     it "should have a zero score for a starting game" $ do
       let game = []
-      score game `shouldBe` "0-0"
-    it "should have a 15-0 score if player1 score" $ do
+      printScore game `shouldBe` "0-0 Love-Love"
+    it "should have a 15-Love score" $ do
       let game = [p1]
-      score game `shouldBe` "15-0"
-    it "should have a 30-0 score if player1 score 2 times" $ do
+      printScore game `shouldBe` "0-0 15-Love"
+    it "should have a 30-Love score" $ do
       let game = [p1, p1]
-      score game `shouldBe` "30-0"
-    it "should have a 40-0 score if player1 score 3 times" $ do
+      printScore game `shouldBe` "0-0 30-Love"
+    it "should have a 40-Love score" $ do
       let game = [p1, p1, p1]
-      score game `shouldBe` "40-0"
-    it "should have a 15-15 score if player1 and player2 score" $ do
+      printScore game `shouldBe` "0-0 40-Love"
+    it "should have a 15-15 score" $ do
       let game = [p1, p2]
-      score game `shouldBe` "15-15"
-    it "should have a 15-40 score if player1 and player2 score" $ do
+      printScore game `shouldBe` "0-0 15-15"
+    it "should have a 15-40 score" $ do
       let game = [p2, p2, p1, p2]
-      score game `shouldBe` "15-40"
-    it "should have avantage Player1 score if player1 and player2 score" $ do
+      printScore game `shouldBe` "0-0 15-40"
+    it "should have avantage Player1" $ do
       let game = [p2, p2, p1, p2, p1, p1, p1]
-      score game `shouldBe` "Avantage Player1"
-    --it "should give Nadal as the winner if he is the only to scored" $ do
-      --let game = "Nadal" `scoreIn` []
-      --score game `shouldBe` "Nadal"
+      printScore game `shouldBe` "0-0 Advantage Nadal"
+    it "should have deuce" $ do
+      let game = [p2, p2, p1, p2, p1, p1, p1, p2]
+      printScore game `shouldBe` "0-0 Deuce"
+    it "should gain advantage" $ do
+      let game = [p2, p2, p1, p2, p1, p1, p1, p2, p2]
+      printScore game `shouldBe` "0-0 Advantage Federer"
+    it "should win game" $ do
+      let game = [p2, p2, p1, p2, p1, p1, p1, p2, p2, p2]
+      printScore game `shouldBe` "0-1 Love-Love"
