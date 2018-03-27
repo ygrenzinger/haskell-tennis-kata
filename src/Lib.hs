@@ -1,5 +1,7 @@
 module Lib where
 
+import Data.Maybe
+
 data Player = Player1 String | Player2 String deriving (Eq)
 instance Show Player where
     show (Player1 name) = name 
@@ -29,28 +31,56 @@ instance Show Game where
     show (Advantage p) = "Advantage " ++ show p
     show (Game p1 p2) = show p1 ++ "-" ++ show p2
 
+gameHasWinner :: Game -> Maybe Player
+gameHasWinner (Win p) = Just p
+gameHasWinner _ = Nothing
+
 data Set = Set Int Int
 instance Show Set where
     show (Set a b) = (show a) ++ "-" ++ (show b)
-data Match = Match Set Game
+
+printSets :: [Set] -> String
+printSets sets = unwords $ map show (reverse sets)
+
+data Match = Match [Set] Game
 instance Show Match where
-    show (Match set game) = (show set) ++ " " ++ (show game)
+    show (Match sets game) = (printSets sets) ++ " " ++ (show game)
 
 increasePoints :: GamePoints -> GamePoints
 increasePoints Love = Fifteen
 increasePoints Fifteen = Thirty
 increasePoints _ = Forty
 
-scoreForPlayer :: Match -> Player -> Match
-scoreForPlayer (Match set Deuce) p = Match set (Advantage p)
-scoreForPlayer (Match set (Advantage p)) o | p == o = Match set (Win p)
-                                           | otherwise = Match set Deuce
-scoreForPlayer (Match set (Game Forty Forty)) p = Match set (Advantage p)
-scoreForPlayer (Match set (Game score1 score2)) (Player1 _) = Match set (Game (increasePoints score1) score2)
-scoreForPlayer (Match set (Game score1 score2)) (Player2 _) = Match set (Game score1 (increasePoints score2))
+scoreGame :: Game -> Player -> Game
+scoreGame Deuce p = Advantage p
+scoreGame (Advantage p) o | p == o = Win p
+                          | otherwise = Deuce
+scoreGame (Game Forty Forty) p = Advantage p
+scoreGame (Game Forty _) p@(Player1 _) = Win p
+scoreGame (Game _ Forty) p@(Player2 _) = Win p
+scoreGame (Game score1 score2) (Player1 _) = Game (increasePoints score1) score2
+scoreGame (Game score1 score2) (Player2 _) = Game score1 (increasePoints score2)
+
+increaseSet :: Set -> Player -> Set
+increaseSet (Set s1 s2) (Player1 _) = (Set (s1+1) s2)
+increaseSet (Set s1 s2) (Player2 _) = (Set s1 (s2+1))
+
+increaseSets :: [Set] -> Player -> [Set]
+increaseSets [] _ = []
+increaseSets (set@(Set s1 s2):sets) p 
+    | s1 == 5 && isPlayer1 p = (Set 0 0): ((increaseSet set p) : sets)
+    | s2 == 5 && isPlayer2 p = (Set 0 0) : ((increaseSet set p) : sets)
+    | otherwise = (increaseSet set p) : sets
+
+scoreForPlayer :: Match -> Player -> Match 
+scoreForPlayer (Match sets game) player = 
+    let newGame = (scoreGame game player)
+        in if (isNothing $ gameHasWinner newGame) 
+            then (Match sets newGame)
+            else (Match (increaseSets sets player) (Game Love Love))
 
 score :: [Player] -> Match
-score ps = foldl scoreForPlayer (Match (Set 0 0) (Game Love Love)) ps
+score ps = foldl scoreForPlayer (Match [(Set 0 0)] (Game Love Love)) ps
 
 printScore :: [Player] -> String
 printScore p = (show $ score p)

@@ -38,6 +38,21 @@ main = hspec $ do
     it "should gain advantage" $ do
       let game = [p2, p2, p1, p2, p1, p1, p1, p2, p2]
       printScore game `shouldBe` "0-0 Advantage Federer"
-    it "should win game" $ do
+    it "should have Federer flawlessy win the game" $ do
+      let game = take 4 $ (repeat p2)
+      printScore game `shouldBe` "0-1 Love-Love"
+    it "should have Federer win the game" $ do
       let game = [p2, p2, p1, p2, p1, p1, p1, p2, p2, p2]
       printScore game `shouldBe` "0-1 Love-Love"
+    it "should have Nadal win the game" $ do
+      let game = [p2, p2, p1, p2, p1, p1, p1, p1]
+      printScore game `shouldBe` "1-0 Love-Love"
+    it "should have Nadal win the set" $ do
+      let game = take 24 $ (repeat p1)
+      printScore game `shouldBe` "6-0 0-0 Love-Love"
+    it "should have Federer win the set" $ do
+      let game = take 24 $ (repeat p2)
+      printScore game `shouldBe` "0-6 0-0 Love-Love"
+    it "should have Nadal win the set" $ do
+      let game = (take 20 $ (repeat p1)) ++ [p2,p2,p2,p2]
+      printScore game `shouldBe` "5-1 Love-Love"
