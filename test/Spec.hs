@@ -53,6 +53,14 @@ main = hspec $ do
     it "should have Federer win the set" $ do
       let game = take 24 $ (repeat p2)
       printScore game `shouldBe` "0-6 0-0 Love-Love"
+    it "should have no winner so far" $ do
+      let game1 = (take 20 $ (repeat p1)) ++ (take 20 $ (repeat p2)) ++ (take 4 $ (repeat p1)) ++ (take 4 $ (repeat p2)) ++ (take 4 $ (repeat p1))
+      printScore game1 `shouldBe` "7-6 Love-Love"
+      let game2 = (take 20 $ (repeat p1)) ++ (take 20 $ (repeat p2)) ++ (take 4 $ (repeat p2)) ++ (take 4 $ (repeat p1)) ++ (take 4 $ (repeat p2))
+      printScore game2 `shouldBe` "6-7 Love-Love"
     it "should have Nadal win the set" $ do
-      let game = (take 20 $ (repeat p1)) ++ [p2,p2,p2,p2]
-      printScore game `shouldBe` "5-1 Love-Love"
+      let game = (take 20 $ (repeat p1)) ++ (take 20 $ (repeat p2)) ++ (take 4 $ (repeat p1)) ++ (take 4 $ (repeat p2)) ++ (take 8 $ (repeat p1))
+      printScore game `shouldBe` "8-6 0-0 Love-Love"
+    it "should win the match" $ do
+      let game = (take 72 $ (repeat p1))
+      printScore game `shouldBe` "6-0 6-0 6-0 Nadal wins the game !"

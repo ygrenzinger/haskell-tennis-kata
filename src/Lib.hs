@@ -42,9 +42,10 @@ instance Show Set where
 printSets :: [Set] -> String
 printSets sets = unwords $ map show (reverse sets)
 
-data Match = Match [Set] Game
+data Match = Match [Set] Game | MatchWin [Set] Player
 instance Show Match where
     show (Match sets game) = (printSets sets) ++ " " ++ (show game)
+    show (MatchWin sets player) = (printSets sets) ++ " " ++ (show player) ++ " wins the game !"
 
 increasePoints :: GamePoints -> GamePoints
 increasePoints Love = Fifteen
@@ -65,23 +66,41 @@ increaseSet :: Set -> Player -> Set
 increaseSet (Set s1 s2) (Player1 _) = (Set (s1+1) s2)
 increaseSet (Set s1 s2) (Player2 _) = (Set s1 (s2+1))
 
+doesPlayerWinsSet :: Set -> Player -> Bool
+doesPlayerWinsSet (Set s1 s2) p =
+    (s1 >= 5 && s1 > s2 && isPlayer1 p) || (s2 >= 5 && s2 > s1 && isPlayer2 p)
+
 increaseSets :: [Set] -> Player -> [Set]
 increaseSets [] _ = []
-increaseSets (set@(Set s1 s2):sets) p 
-    | s1 == 5 && isPlayer1 p = (Set 0 0): ((increaseSet set p) : sets)
-    | s2 == 5 && isPlayer2 p = (Set 0 0) : ((increaseSet set p) : sets)
+increaseSets (set:sets) p 
+    | doesPlayerWinsSet set p = (Set 0 0) : ((increaseSet set p) : sets)
     | otherwise = (increaseSet set p) : sets
 
+hasPlayerWonSet :: Player -> Set -> Bool
+hasPlayerWonSet (Player1 _) (Set s1 s2) = s1 > s2 
+hasPlayerWonSet (Player2 _) (Set s1 s2) = s2 > s1 
+
+winSetsCount :: [Set] -> Player -> Int
+winSetsCount sets p = 
+    length $ filter (hasPlayerWonSet p) sets
+
+doesPlayerWin :: Match -> Player -> Bool
+-- You need to win 3 sets to win the match
+doesPlayerWin (Match (current:sets) _) p = (winSetsCount sets p) >= 2 && doesPlayerWinsSet current p 
+doesPlayerWin _ _ = False
+
 scoreForPlayer :: Match -> Player -> Match 
-scoreForPlayer (Match sets game) player = 
-    let newGame = (scoreGame game player)
-        in if (isNothing $ gameHasWinner newGame) 
-            then (Match sets newGame)
-            else (Match (increaseSets sets player) (Game Love Love))
+scoreForPlayer match@(MatchWin _ _) _ = match
+scoreForPlayer match@(Match sets game) player =
+    if doesPlayerWin match player
+        then MatchWin (tail $ increaseSets sets player) player
+        else let newGame = scoreGame game player
+                 in if isNothing $ gameHasWinner newGame
+                    then Match sets newGame
+                    else Match (increaseSets sets player) (Game Love Love)
 
 score :: [Player] -> Match
 score ps = foldl scoreForPlayer (Match [(Set 0 0)] (Game Love Love)) ps
 
 printScore :: [Player] -> String
 printScore p = (show $ score p)
-
