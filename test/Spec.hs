@@ -2,6 +2,8 @@ import Lib
 
 import Test.Hspec (Spec, hspec, describe, it, shouldBe)
 
+import Test.QuickCheck
+
 p1 = Player1 "Nadal"
 p2 = Player2 "Federer"
 
@@ -64,3 +66,45 @@ main = hspec $ do
     it "should win the match" $ do
       let game = (take 72 $ (repeat p1))
       printScore game `shouldBe` "6-0 6-0 6-0 Nadal wins the game !"
+    it "should respect sets invariants" $ do
+      quickCheckWith Test.QuickCheck.stdArgs {Test.QuickCheck.maxSuccess = 3000}  props_setAreValid
+
+-- https://www.stackbuilders.com/news/a-quickcheck-tutorial-generators
+-- https://www.schoolofhaskell.com/user/griba/quick-check-generator-of-pair-List-index-where-index-within-list-range
+-- https://begriffs.com/posts/2017-01-14-design-use-quickcheck.html
+-- http://codingstruggles.com/haskell/arbitrary-length-lists-quickcheck.html
+
+
+-- invariants
+-- set (s1 || s2) < 6 or |s1 - s2| <= 2
+
+
+instance Arbitrary Player where
+  arbitrary = do
+    point <- elements [p1, p2]
+    return point    
+
+randomPlayerPoint :: Gen Player
+randomPlayerPoint = do
+  point <- elements [p1, p2]
+  return point
+
+randomMatch :: Gen [Player]
+randomMatch = do
+  n <- choose (72, 400)
+  match <- sequenceA (take n (repeat $ randomPlayerPoint))
+  return match
+
+instance Arbitrary Match where
+  arbitrary = do
+    match <- randomMatch
+    return (score match)
+
+props_setAreValid :: Match -> Bool
+props_setAreValid (Match sets _) = all isValidSet sets  
+props_setAreValid (MatchWin sets _) = 
+  let setLength = length sets
+  in setLength >= 3 && setLength <= 5
+
+isValidSet :: Set -> Bool
+isValidSet (Set s1 s2) = s1 <= 6 && s2 <= 6 || abs (s1 - s2) <= 2
